@@ -1,3 +1,12 @@
+# ---- Enviroment setup ----
+infrastructure:
+  region: eu-north-1
+  instances:
+    - name: red
+      instance_type: t3.large
+    - name: blue
+      instance_type: t3.large
+
 machines:
   - name: lab-1
     instance_type: c7i-flex.large     
@@ -6,11 +15,30 @@ machines:
     nodes: [blue, red]               
     pmode: https://github.com/<owner>/test-tool/blob/main/pmodes/v1.xml   
 
-    tests:
-      - name: small-file
-        from: blue
-        to: red
-        file_size: 1MB
-        runs: 2                   
-        expect: received          
-        timeout: 120                  
+# ---- Domibud instances location ----
+targets:
+  red:
+    url: http://localhost:8080/domibus
+    user: admin
+    password: 123456
+  blue:
+    url: http://localhost:9080/domibus
+    user: admin
+    password: 123456
+
+pmode:
+  repo: org/domibus-pmodes
+  path: pmodes/red-blue.xml
+
+# ---- Tests ----
+tests:
+  - name: small_files
+    from: red
+    to: blue
+    file_size_kb: 10
+    count: 100
+  - name: large_files
+    from: red
+    to: blue
+    file_size_kb: 20000
+    count: 5
