@@ -18,13 +18,13 @@ machines:
 # ---- Domibud instances location ----
 targets:
   red:
-    url: http://localhost:8080/domibus
+    url: http://red-domibus:8080/domibus
     user: admin
-    password: 123456
+    password: ua!sdTELUc9ByGMU
   blue:
-    url: http://localhost:9080/domibus
+    url: http://blue-domibus:8082/domibus
     user: admin
-    password: 123456
+    password: m1iQ#lgCok7R26^#
 
 pmode:
   repo: org/domibus-pmodes
