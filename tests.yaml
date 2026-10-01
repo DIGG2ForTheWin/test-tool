@@ -36,9 +36,14 @@ tests:
     from: red
     to: blue
     file_size_kb: 10
-    count: 100
-  - name: large_files
+    count: 10
+  - name: medium_under_2gb
     from: red
     to: blue
-    file_size_kb: 20000
-    count: 5
+    file_size_kb: 500000   # ~500 MB
+    count: 1
+  - name: large_over_2gb
+    from: red
+    to: blue
+    file_size_kb: 2300000  # ~2.2 GB 
+    count: 1

@@ -39,12 +39,12 @@ def main():
             print(f"  * Test: {test['name']}")
             print(f"    Route: {test['from']} -> {test['to']}")
             print(
-                f"    File: {test['count']} st á {test['file_size_kb']} KB"
+                f"    File: {test['count']} qt {test['file_size_kb']} KB"
             )
             print("-" * 30)
 
     except Exception as e:
-        print(f"Fel: {e}", file=sys.stderr)
+        print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 
 
