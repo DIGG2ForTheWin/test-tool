@@ -1,14 +1,14 @@
 FROM python:3.11-slim
 
-# Wotking directory in Docker
+# Working directory inside the container
 WORKDIR /app
 
-# Installing requirments
+# Install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the project files
 COPY . .
 
-# Start command
+# Entry point
 ENTRYPOINT ["python", "src/main.py"]
