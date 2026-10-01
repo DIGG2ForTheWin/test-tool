@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 
 
-# Threshold: when to create in ram or writning to disk
+# Threshold for generating payloads in RAM vs. writing them to disk
 DISK_THRESHOLD_KB = 50 * 1024
 
 
@@ -12,7 +12,7 @@ def generate_file_on_disk(file_path: Path, size_kb: int, chunk_size_mb: int = 8)
     total_bytes = size_kb * 1024
     chunk_bytes = chunk_size_mb * 1024 * 1024
     
-    # Generating random block, then it's reused
+    # Generate one random block and reuse it for every chunk
     block = os.urandom(chunk_bytes)
     
     bytes_written = 0
@@ -32,7 +32,7 @@ def create_payload_info(
     size_kb = test_case.get("file_size_kb", 0)
     filename = f"test_{test_case.get('name', 'payload')}_{sequence_num}_{size_kb}KB.bin"
     
-    # Case 1: Smaller files (< 50 MB) in RAM for maxium speed
+    # Case 1: Small files (< 50 MB) are generated in RAM for maximum speed
     if size_kb < DISK_THRESHOLD_KB:
         data = os.urandom(size_kb * 1024)
         return {
@@ -44,7 +44,7 @@ def create_payload_info(
             "file_path": None
         }
     
-    # Case 2: Bigger files (> 50 MB, i.e. 2.5 GB) writes to disk
+    # Case 2: Large files (>= 50 MB, e.g. 2.5 GB) are written to disk
     target_dir = temp_dir or Path(tempfile.gettempdir())
     file_path = target_dir / filename
     
@@ -55,7 +55,13 @@ def create_payload_info(
         "filename": filename,
         "content_type": "application/octet-stream",
         "is_file_on_disk": True,
-        "data": None,  # No data in ram
+        "data": None,  # Data is not kept in RAM
         "size_bytes": size_kb * 1024,
         "file_path": file_path
     }
+
+def cleanup_payload(payload_meta: Dict[str, Any]) -> None:
+    if payload_meta.get("is_file_on_disk") and payload_meta.get("file_path"):
+        file_path = Path(payload_meta["file_path"])
+        if file_path.exists():
+            file_path.unlink()  

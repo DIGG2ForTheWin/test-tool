@@ -2,13 +2,14 @@ from datetime import datetime, timezone
 import os
 import uuid
 from typing import Any, Dict, Optional
-from lxml import etree
+
 
 # Installed via requirements.txt in the Docker image
 from requests import Session
 from requests.auth import HTTPBasicAuth
 from zeep import Client, Settings
 from zeep.transports import Transport
+from lxml import etree
 
 
 class DomibusWSClient:
