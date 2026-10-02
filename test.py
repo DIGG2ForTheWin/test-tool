@@ -1,8 +1,8 @@
-#run all/[test-name]
+# run all | <test-name>
 
 # modules
 # ============================
-# remote access to aws
+# remote access to AWS
 # download PMode (GitHub)
 # create test files
 # read tests.yaml

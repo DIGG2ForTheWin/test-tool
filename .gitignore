@@ -11,3 +11,11 @@ __pycache__/
 token.txt
 domibus_pass.txt
 .vscode/
+.DS_Store
+.DS_Store?
+._*
+
+# Secrets
+.env
+*.pem
+token.txt

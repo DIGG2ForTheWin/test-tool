@@ -24,19 +24,37 @@ nodes:
   red:
     port: 8082
     machine: lab-2
+# ---- Domibus instance locations ----
+# The WS plugin requires a plugin user; the admin login for the GUI does not work.
+# Credentials are read from environment variables (see .env.example).
+targets:
+  domibus-red:
+    url: http://domibus-red:8080/domibus
+    user: ${DOMIBUS_RED_USER}
+    password: ${DOMIBUS_RED_PASSWORD}
+  domibus-blue:
+    url: http://domibus-blue:8080/domibus
+    user: ${DOMIBUS_BLUE_USER}
+    password: ${DOMIBUS_BLUE_PASSWORD}
+
+pmode:
+  repo: org/domibus-pmodes
+  path: pmodes/red-blue.xml
 
 # ---- Tests ----
-
-pmode: https://github.com/<owner>/test-tool/blob/main/pmodes/v1.xml
-
 tests:
   - name: small_files
-    from: red
-    to: blue
+    from: domibus-red
+    to: domibus-blue
     file_size_kb: 10
-    count: 100
-  - name: large_files
-    from: red
-    to: blue
-    file_size_kb: 20000
-    count: 5
+    count: 10
+  - name: medium_under_2gb
+    from: domibus-red
+    to: domibus-blue
+    file_size_kb: 500000   # ~500 MB
+    count: 1
+  - name: large_over_2gb
+    from: domibus-red
+    to: domibus-blue
+    file_size_kb: 2300000  # ~2.2 GB 
+    count: 1
