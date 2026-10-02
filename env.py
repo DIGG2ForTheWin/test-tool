@@ -1,6 +1,6 @@
-# up - creates the server, install Docker and Domibus
-# down - destroys server
-# status
+# up     - creates the server, installs Docker and Domibus
+# down   - destroys the server
+# status - shows the current state
 
 # modules
 # ==============================
