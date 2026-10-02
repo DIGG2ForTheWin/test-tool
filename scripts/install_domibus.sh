@@ -7,6 +7,10 @@ set -e
 
 VERSION="5.2.1.3-JEE10"
 URL="https://ec.europa.eu/digital-building-blocks/artifact/repository/eDelivery/eu/domibus/domibus-msh-distribution/${VERSION}/domibus-msh-distribution-${VERSION}-tomcat-full.zip"
+# OLD: FS_URL="https://ec.europa.eu/digital-building-blocks/artifact/repository/eDelivery/eu/domibus/domibus-msh-distribution/${VERSION}-JEE10/domibus-msh-distribution-${VERSION}-JEE10-default-fs-plugin.zip"
+# Patch releases (5.2.1.3) have no plugin zip of their own, so the plugin comes from the 5.2 release
+FS_VERSION="5.2-JEE10"
+FS_URL="https://ec.europa.eu/digital-building-blocks/artifact/repository/eDelivery/eu/domibus/domibus-msh-distribution/${FS_VERSION}/domibus-msh-distribution-${FS_VERSION}-default-fs-plugin.zip"
 LAB="/opt/lab"
 NODES="${NODES:?NODES must be set, e.g. NODES='blue red'}"
 
@@ -15,7 +19,11 @@ NODES="${NODES:?NODES must be set, e.g. NODES='blue red'}"
 apt-get install -y -o DPkg::Lock::Timeout=300 unzip
 
 # Download once
-curl -fL -o /tmp/domibus.zip "$URL"
+# -sS: no progress bar, but still show errors
+curl -fsSL -o /tmp/domibus.zip "$URL"
+curl -fsSL -o /tmp/fs-plugin.zip "$FS_URL"
+rm -rf /tmp/fs-plugin
+unzip -q /tmp/fs-plugin.zip -d /tmp/fs-plugin
 
 # Unpack a separate copy for each node
 # OLD: for NODE in blue red; do
@@ -36,10 +44,26 @@ for NODE in $NODES; do
   sed -i '/domibus.auth.unsecureLoginAllowed/d' "$PROPS"
   echo "domibus.auth.unsecureLoginAllowed=true" >> "$PROPS"
 
+  # FS plugin: jar -> plugins/lib, properties -> plugins/config
+  # (find is used so it works whatever folder layout the zip has)
+  PLUGINS="$LAB/$NODE/domibus/conf/domibus/plugins"
+  mkdir -p "$PLUGINS/lib" "$PLUGINS/config"
+  find /tmp/fs-plugin -name "*.jar" -exec cp {} "$PLUGINS/lib/" \;
+  find /tmp/fs-plugin -name "*.properties" -exec cp {} "$PLUGINS/config/" \;
+
+  # Where the FS plugin watches for files (OUT/IN/SENT/FAILED are created inside).
+  # /opt/domibus in the container = /opt/lab/$NODE/domibus on the server
+  FS_PROPS=$(ls "$PLUGINS"/config/*fs*plugin*.properties | head -1)
+  sed -i '/^fsplugin.messages.location/d' "$FS_PROPS"
+  echo "fsplugin.messages.location=/opt/domibus/fs_plugin_data" >> "$FS_PROPS"
+  mkdir -p "$LAB/$NODE/domibus/fs_plugin_data"
+
   echo "Installed $NODE"
+  ls "$PLUGINS/lib" "$PLUGINS/config"
 done
 
 rm /tmp/domibus.zip
+rm -rf /tmp/fs-plugin.zip /tmp/fs-plugin
 
 # Let the ubuntu user own the files, and make the Tomcat scripts runnable
 # OLD: sudo chown -R ubuntu:ubuntu "$LAB"

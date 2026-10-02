@@ -9,7 +9,13 @@ infrastructure:
     - name: lab-2
       instance_type: c7i-flex.large
       storage_gb: 16
+    - name: monitor
+      instance_type: t3.small
+      storage_gb: 8      # OLD: storage_gb: 8gb  (Terraform needs a number)
             
+monitoring:
+  machine: monitor
+  
 # ---- Domibud instances location ----
 nodes:
   blue:
@@ -19,14 +25,9 @@ nodes:
     port: 8082
     machine: lab-2
 
-# OLD (duplicate key, the GitHub link below is used):
-# pmode:
-#   repo: org/domibus-pmodes
-#   path: pmodes/red-blue.xml
-
 # ---- Tests ----
 
-pmode: https://github.com/<owner>/test-tool/blob/main/pmodes/v1.xml   
+pmode: https://github.com/<owner>/test-tool/blob/main/pmodes/v1.xml
 
 tests:
   - name: small_files

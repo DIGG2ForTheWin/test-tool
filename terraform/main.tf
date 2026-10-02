@@ -36,6 +36,26 @@ resource "aws_security_group" "ssh" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+  
+  ingress {
+    from_port = 8080   # cAdvisor
+    to_port   = 8080
+    protocol  = "tcp"
+    self      = true
+  }
+  ingress {
+    from_port = 9100   # node-exporter
+    to_port   = 9100
+    protocol  = "tcp"
+    self      = true
+  }
+  ingress {
+    from_port = 8081   # Domibus blue (AS4 messages between machines)
+    to_port   = 8082   # Domibus red
+    protocol  = "tcp"
+    self      = true
+  }
+
 }
 
 resource "aws_instance" "app_server" {
@@ -62,4 +82,8 @@ resource "aws_key_pair" "me" {
 
 output "public_ips" {
   value = { for name, server in aws_instance.app_server : name => server.public_ip }
+}
+
+output "private_ips" {
+  value = { for name, s in aws_instance.app_server : name => s.private_ip }
 }

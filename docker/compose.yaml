@@ -51,6 +51,10 @@ services:
       - /var/run:/var/run:ro
       - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
+    ports:
+      - "8080:8080"   # scraped by Prometheus on the monitor machine
 
   node-exporter:
     image: prom/node-exporter
+    ports:
+      - "9100:9100"   # scraped by Prometheus on the monitor machine
