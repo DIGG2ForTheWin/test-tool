@@ -4,3 +4,9 @@
 .terraform.lock.hcl
 *.tfvars.json
 *.pem
+prometheus.generated.yaml
+.venv/
+__pycache__/
+.tunnel-*.sock
+token.txt
+domibus_pass.txt.vscode/
