@@ -56,5 +56,6 @@ services:
 
   node-exporter:
     image: prom/node-exporter
+    hostname: ${MACHINE:-node}
     ports:
       - "9100:9100"   # scraped by Prometheus on the monitor machine

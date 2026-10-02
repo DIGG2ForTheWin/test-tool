@@ -26,7 +26,6 @@ PROMETHEUS_CONFIG = "grafana/prometheus.generated.yaml"   # written by env.py on
 def nodes_on(machine):
     return [node for node, settings in NODES.items() if settings["machine"] == machine]
 
-
 def terraform(*args):
     result = subprocess.run(
         ["terraform", "-chdir=terraform" , *args],
@@ -97,12 +96,12 @@ def wait_for_domibus(ip, port, name, timeout=600):
         time.sleep(5)
     raise TimeoutError(f"{name} did not start within {timeout}s")
 
-def start_domibus(ip, nodes):
+def start_domibus(name, ip, nodes):
     print(f"Starting {', '.join(nodes)}...")
     ssh(ip, "cat > /opt/lab/compose.yaml", "docker/compose.yaml")
 
     services = " ".join(nodes + EXPORTERS)
-    ssh(ip, f"cd /opt/lab && sudo docker compose up -d --quiet-pull {services}")
+    ssh(ip, f"cd /opt/lab && sudo MACHINE={name} docker compose up -d --quiet-pull {services}")
     for node in nodes:
         wait_for_domibus(ip, NODES[node]["port"], node)
 
@@ -112,8 +111,10 @@ def write_prometheus_config(private_ips):
     cadvisor_targets = []
     for name, ip in private_ips.items():
         if nodes_on(name):
-            node_targets.append({"targets": [f"{ip}:9100"], "labels": {"machine": name}})
-            cadvisor_targets.append({"targets": [f"{ip}:8080"], "labels": {"machine": name}})
+            # OLD: node_targets.append({"targets": [f"{ip}:9100"], "labels": {"machine": name}})
+            # OLD: cadvisor_targets.append({"targets": [f"{ip}:8080"], "labels": {"machine": name}})
+            node_targets.append({"targets": [f"{ip}:9100"], "labels": {"instance": name}})
+            cadvisor_targets.append({"targets": [f"{ip}:8080"], "labels": {"instance": name}})
     config = {"scrape_configs": [
         {"job_name": "node", "static_configs": node_targets},
         {"job_name": "cadvisor", "static_configs": cadvisor_targets},
@@ -134,22 +135,20 @@ def tunnel_socket(machine):
     return f".tunnel-{machine}.sock"
 
 
-def tunnel_forwards(machine, index):
+def tunnel_forwards(machine):
 
     forwards = {}
     for node in nodes_on(machine):
         port = NODES[node]["port"]
         forwards[port] = port
-    # OLD: for service, port in MONITORING_PORTS.items():
-    # OLD:     forwards[port + index] = port
     if machine == MONITOR_MACHINE:
         for service, port in MONITORING_PORTS.items():
             forwards[port] = port
     return forwards
 
-def open_tunnel(machine, ip, index):
+def open_tunnel(machine, ip):
     close_tunnel(machine)
-    forwards = tunnel_forwards(machine, index)
+    forwards = tunnel_forwards(machine)
     args = []
     for local, remote in forwards.items():
         args += ["-L", f"{local}:localhost:{remote}"]
@@ -212,7 +211,8 @@ def setup_machine(name, ip):
     install_docker(ip)
     if nodes:
         install_domibus(ip, nodes)
-        start_domibus(ip, nodes)
+        # OLD: start_domibus(ip, nodes)
+        start_domibus(name, ip, nodes)
     if name == MONITOR_MACHINE:
         start_monitoring(ip)
 
