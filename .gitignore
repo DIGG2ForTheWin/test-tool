@@ -9,4 +9,5 @@ prometheus.generated.yaml
 __pycache__/
 .tunnel-*.sock
 token.txt
-domibus_pass.txt.vscode/
+domibus_pass.txt
+.vscode/
