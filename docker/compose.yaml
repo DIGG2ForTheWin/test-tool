@@ -27,6 +27,9 @@ services:
  
   prometheus:
     image: prom/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yaml"
+      - "--storage.tsdb.path=/prometheus"
     volumes:
       - ./prometheus.yaml:/etc/prometheus/prometheus.yaml
     ports:
@@ -39,7 +42,7 @@ services:
     environment:
       GF_SECURITY_ADMIN_PASSWORD: admin
     volumes:
-      - ./grafana/datasource.yaml:/etc/grafana/provisioning/datasources/datasource.yaml
+      - ./datasource.yaml:/etc/grafana/provisioning/datasources/datasource.yaml
 
   cadvisor:
     image: gcr.io/cadvisor/cadvisor

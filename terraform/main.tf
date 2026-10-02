@@ -1,6 +1,12 @@
-provider "aws" {
-  region = "eu-north-1"
+locals {
+  config = yamldecode(file("${path.module}/../tests.yaml"))
+  machines = { for m in local.config.infrastructure.machines : m.name => m }
 }
+
+provider "aws" {
+  region = local.config.infrastructure.region
+}
+
 
 data "aws_ami" "ubuntu" {
   most_recent = true
@@ -33,13 +39,19 @@ resource "aws_security_group" "ssh" {
 }
 
 resource "aws_instance" "app_server" {
+  for_each = local.machines
+
   ami           = data.aws_ami.ubuntu.id
-  instance_type = "m7i-flex.large"
+  instance_type = each.value.instance_type
   key_name = aws_key_pair.me.key_name
   vpc_security_group_ids = [aws_security_group.ssh.id]
 
+  root_block_device {
+    volume_size = each.value.storage_gb
+  }
+
   tags = {
-    Name = "learn-terraform"
+    Name = each.value.name
   }
 }
 
@@ -48,6 +60,6 @@ resource "aws_key_pair" "me" {
   public_key = file("../Key.pub")
 }
 
-output "public_ip" {
-  value = aws_instance.app_server.public_ip
+output "public_ips" {
+  value = { for name, server in aws_instance.app_server : name => server.public_ip }
 }
