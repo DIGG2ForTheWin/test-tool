@@ -15,6 +15,7 @@ domibus_pass.txt
 .DS_Store?
 ._*
 /build
+node.yaml
 
 # Secrets
 .env
