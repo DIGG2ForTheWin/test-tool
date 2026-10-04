@@ -1,0 +1,12 @@
+# node.yaml – per machine, never commit
+node: blue                        # which node this machine is      
+data_root: /opt/lab/blue/domibus 
+nodes:
+  blue:
+    url: http://localhost:8081/domibus      # (local adress) --> OBS! no ending /
+    username: CHANGE_ME                     # needs to be a plugin_user
+    password: CHANGE_ME                     # quote with single quotes if it contains special characters ('')
+  red:
+    url: http://localhost:8082/domibus      # (local adress) --> OBS! no ending /
+    username: CHANGE_ME                     # needs to be a plugin_user
+    password: CHANGE_ME                     # quote with single quotes if it contains special characters ('')
