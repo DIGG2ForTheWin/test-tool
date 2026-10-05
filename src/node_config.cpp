@@ -7,7 +7,7 @@ namespace {
 
     YAML::Node read_file(const fs::path& file) {
         try {
-            const YAML::Node root = YAML::LoadFile(file);
+            const YAML::Node root = YAML::LoadFile(file.string());
             return root;
         } 
         catch(const YAML::BadFile& b){
@@ -58,6 +58,7 @@ NodeConfig parse_node_config(const fs::path& file) {
     }
 
     NodeConfig config;
+    config.source = file;
 
     try
     {

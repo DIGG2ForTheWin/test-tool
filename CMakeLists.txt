@@ -11,6 +11,7 @@ add_executable(tester
     src/main.cpp
     src/cli.cpp
     src/node_config.cpp
+    src/run_config.cpp
 )
 
 

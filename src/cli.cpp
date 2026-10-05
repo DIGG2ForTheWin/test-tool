@@ -1,6 +1,5 @@
 #include "cli.h"
 #include <algorithm>
-#include <iostream>
 
 Options parse_options(const std::vector<std::string>& args) {
     std::vector<std::string> positional;
@@ -11,10 +10,13 @@ Options parse_options(const std::vector<std::string>& args) {
         if ((pos + 1) >= args.size()) {
             throw UsageError("option '" + args.at(pos) + "' requires a value");
         }
-
-        if (args.at(pos + 1).starts_with("--")) {
+        auto& next_arg = args.at(pos + 1);
+        if (next_arg.starts_with("--")) {
             throw UsageError("option '" + args.at(pos) + "' requires a value, got '" 
             + args.at(pos + 1) + "'");
+        }
+        if (next_arg.empty()) {
+            throw UsageError("option '" + args.at(pos) + "' requires a non-empty value");
         }
 
         return args[++pos];
@@ -30,29 +32,19 @@ Options parse_options(const std::vector<std::string>& args) {
         }
 
         if (argument == "--node") {
-            const auto next = next_arg();
-
-            if (next != "blue" && next != "red") {
-                throw UsageError("invalid value for '--node': '" + next + "' (expected 'red' or 'blue')");
-            }
-
-            opt.node = next;
+            opt.node = next_arg();
 
         } else if (argument == "--data-root") {
-            opt.data_path = next_arg();
+            opt.data_root = next_arg();
 
+        } else if (argument == "--node-config") {
+            opt.node_config = next_arg();
         } else {
-            throw UsageError("unknown option: '" + args.at(pos) + "'");
+            throw UsageError("unknown option: '" + argument + "'");
         } 
 
         ++pos; 
     }
-
-    if (opt.node.empty()) {
-        throw UsageError("no node given; use --node <red|blue>"); //(or set TESTER_NODE)när miljövariabler finns
-    }
-
-    std::vector<std::string> tests;
 
     if (positional.empty()) {
         throw UsageError("missing command (expected 'run')");
@@ -62,18 +54,15 @@ Options parse_options(const std::vector<std::string>& args) {
         throw UsageError("unknown command: '" + positional.at(0) + "' (expected 'run')");
     }
     
-    tests = std::vector<std::string>(positional.begin() + 1, positional.end());
+    opt.tests = std::vector<std::string>(positional.begin() + 1, positional.end());
 
-    if (tests.empty()) {
+    if (opt.tests.empty()) {
         throw UsageError("'run' needs at least one test name, or 'all'");
     }
 
-    if(std::find(tests.begin(), tests.end(), "all") != tests.end() && tests.size() > 1) {
+    if(std::find(opt.tests.begin(), opt.tests.end(), "all") != opt.tests.end() && opt.tests.size() > 1) {
         throw UsageError("'all' cannot be combined with other test names");
-
     }
-    
-    opt.tests = tests;
     
     return opt;
 }
