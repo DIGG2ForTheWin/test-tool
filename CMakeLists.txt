@@ -10,6 +10,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_executable(tester 
     src/main.cpp
     src/cli.cpp
+    src/node_config.cpp
 )
 
 

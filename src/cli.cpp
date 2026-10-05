@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <iostream>
 
-Options parse_options(const std::vector<std::string> &args) {
+Options parse_options(const std::vector<std::string>& args) {
     std::vector<std::string> positional;
     Options opt;
     std::size_t pos = 0;

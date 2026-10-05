@@ -4,13 +4,15 @@
 #include <filesystem>
 #include <yaml-cpp/yaml.h>
 #include "cli.h"
+#include "node_config.h"
 
-
+namespace fs = std::filesystem;
 
 int main(int argc, char* argv[]) {
     const std::string error_prefix = "tester: error: ";
-
     std::vector<std::string> args;
+    fs::path cfg = "node.yaml";
+   
 
     for(int i = 1; i < argc; ++i) {
         args.push_back(argv[i]);
@@ -18,15 +20,14 @@ int main(int argc, char* argv[]) {
 
     try {
         Options opt = parse_options(args);
-
-        std::cout << "Node: " << opt.node << "\nPath to data: " << opt.data_path << "\nTests:";
-        for (const auto &test: opt.tests) {
-            std::cout << "\n" << test;
-        }
+        NodeConfig nc = parse_node_config(cfg);
 
     }
-    catch(const UsageError& e) {
-        std::cerr << error_prefix << e.what() << '\n';
+    catch (const ConfigError& c) {
+        std::cerr << error_prefix << c.what() << "\n";
+    }
+    catch (const UsageError& e) {
+        std::cerr << error_prefix << e.what() << "\n";
         std::cerr << "usage: tester run <test...|all> --node <red|blue> [--data-root <path>]\n";
         return 2;
     }

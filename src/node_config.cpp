@@ -1,0 +1,111 @@
+#include "node_config.h"
+#include <yaml-cpp/yaml.h>
+
+namespace {
+    namespace fs = std::filesystem;
+    constexpr std::string_view placeholder = "CHANGE_ME";
+
+    YAML::Node read_file(const fs::path& file) {
+        try {
+            const YAML::Node root = YAML::LoadFile(file);
+            return root;
+        } 
+        catch(const YAML::BadFile& b){
+            throw ConfigError("cannot open file: " + std::string(b.what()));
+        } 
+        catch(const YAML::Exception& e) {
+            throw ConfigError("YAML error: " + std::string(e.what()));
+        }
+    }
+
+    std::string get_value(const YAML::Node& node ,const std::string& key, const std::string& prefix = "") {
+        std::string full_key = (prefix.empty()) ? key : prefix + "." + key;
+        const YAML::Node value = node[key];
+
+        if (!value.IsDefined()) {
+            throw ConfigError("missing key: '" + full_key + "'");
+        }
+        if (value.IsNull()) {
+            throw ConfigError("'" + full_key + "' is empty");
+        }
+        if (!value.IsScalar()) {
+            throw ConfigError("'" + full_key + "' must be a single value, not a list or map");
+        }
+
+        const auto value_string = value.as<std::string>();
+
+        if (value_string.empty()) {
+            throw ConfigError("'" + full_key + "' is empty");
+        }
+        if (value_string == placeholder) {
+            throw ConfigError("'" + full_key + "' still has the placeholder value from example.node.yaml");
+        }
+
+        return value_string;
+    }
+}
+
+NodeConfig parse_node_config(const fs::path& file) {
+    
+    if (!fs::exists(file)) {
+        throw ConfigError("'" + fs::absolute(file).string() 
+            + "' dosen't exist (use example.node.yaml to create node.yaml)");
+    }
+
+    if (!fs::is_regular_file(file)) {
+        throw ConfigError("'" + fs::absolute(file).string() 
+            + "' isn't a file (use example.node.yaml to create node.yaml)");
+    }
+
+    NodeConfig config;
+
+    try
+    {
+        const YAML::Node root = read_file(file);
+
+        if (!root.IsMap()) {
+            throw ConfigError("'" + fs::absolute(file).string() + "' is empty or not a YAML map");
+        }
+
+        config.node = get_value(root, "node");
+        config.data_root = get_value(root, "data_root");
+
+        const YAML::Node nodes = root["nodes"];
+
+        if (!nodes.IsDefined()) {
+            throw ConfigError("missing key: 'nodes'");
+        }
+
+        if (nodes.IsNull()) {
+            throw ConfigError("'nodes' is empty");
+        }
+
+        if (!nodes.IsMap()) {
+            throw ConfigError("'nodes' is not a map");
+        }
+        
+        for (const auto &entry : nodes) {
+            std::string key = entry.first.as<std::string>();
+            const YAML::Node value = entry.second;
+
+            const std::string prefix = "nodes." + key;
+
+            if (!value.IsMap()) {
+                throw ConfigError("'" + prefix + "' is not a map");
+            }
+
+            NodeEndpoint n;
+            n.url = get_value(value, "url", prefix);
+            n.username = get_value(value, "username", prefix);
+            n.password = get_value(value, "password", prefix);
+
+            config.nodes[key] = n;
+        }
+    }
+    catch(const ConfigError& c)
+    {
+        throw ConfigError(file.filename().string() + ": " + c.what());
+    }
+
+    return config;
+}

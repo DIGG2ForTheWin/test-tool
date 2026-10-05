@@ -12,7 +12,7 @@ struct Options {
     std::vector<std::string> tests;
 };
 
-Options parse_options(const std::vector<std::string> &args);
+Options parse_options(const std::vector<std::string>& args);
 
 class UsageError : public std::runtime_error {
 public:
