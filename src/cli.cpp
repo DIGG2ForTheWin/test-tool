@@ -1,5 +1,6 @@
 #include "cli.h"
 #include <algorithm>
+#include "errors.h"
 
 Options parse_options(const std::vector<std::string>& args) {
     std::vector<std::string> positional;

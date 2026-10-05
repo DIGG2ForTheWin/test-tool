@@ -1,4 +1,5 @@
 #include "run_config.h"
+#include "errors.h"
 
 namespace {
     namespace fs = std::filesystem;

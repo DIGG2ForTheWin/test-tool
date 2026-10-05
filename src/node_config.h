@@ -3,7 +3,6 @@
 
 #include <string>
 #include <map>
-#include <stdexcept>
 #include <filesystem>
 
 struct NodeEndpoint {
@@ -20,12 +19,5 @@ struct NodeConfig {
 };
 
 NodeConfig parse_node_config(const std::filesystem::path& file);
-
-class ConfigError : public std::runtime_error {
-public:
-    using std::runtime_error::runtime_error;
-};
-
-
 
 #endif

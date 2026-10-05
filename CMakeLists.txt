@@ -12,6 +12,7 @@ add_executable(tester
     src/cli.cpp
     src/node_config.cpp
     src/run_config.cpp
+    src/yaml_util.cpp
 )
 
 

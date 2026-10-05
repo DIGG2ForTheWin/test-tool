@@ -5,6 +5,7 @@
 #include "cli.h"
 #include "node_config.h"
 #include "run_config.h"
+#include "errors.h"
 
 namespace {
     namespace fs = std::filesystem;
