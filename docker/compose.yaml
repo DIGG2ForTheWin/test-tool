@@ -2,19 +2,32 @@ services:
   blue:
     image: ghcr.io/sputtifrutti/domibus
     container_name: domibus-blue
+    environment:
+      # CATALINA_OPTS is empty in the image (its setenv.sh only extends JAVA_OPTS), so nothing is replaced
+      CATALINA_OPTS: >-
+        -javaagent:/opt/jmx/jmx_prometheus_javaagent.jar=9404:/opt/jmx/config.yaml
+        -Dhikaricp.configurationFile=/opt/jmx/hikari.properties
     volumes:
-      - ./blue/fs:/opt/domibus/fs_plugin_data 
+      - ./blue/fs:/opt/domibus/fs_plugin_data
+      - ./jmx:/opt/jmx:ro   # staged by scripts/install_jmx_exporter.sh
     ports:
       - "8081:8080"
+      - "9404:9404"   # JMX exporter, scraped by Prometheus on the monitor machine
     restart: unless-stopped
 
   red:
     image: ghcr.io/sputtifrutti/domibus
     container_name: domibus-red
+    environment:
+      CATALINA_OPTS: >-
+        -javaagent:/opt/jmx/jmx_prometheus_javaagent.jar=9404:/opt/jmx/config.yaml
+        -Dhikaricp.configurationFile=/opt/jmx/hikari.properties
     volumes:
       - ./red/fs:/opt/domibus/fs_plugin_data
+      - ./jmx:/opt/jmx:ro
     ports:
       - "8082:8080"
+      - "9404:9404"
     restart: unless-stopped
  
   prometheus:

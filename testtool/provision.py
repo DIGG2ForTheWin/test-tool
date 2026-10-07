@@ -21,6 +21,13 @@ def install_domibus(ip, nodes):
     print(ssh(ip, "ls /opt/lab").strip())
 
 
+def install_jmx_exporter(ip):
+    """Stage the JMX Exporter agent and its config in /opt/lab/jmx (mounted into Domibus)."""
+    print("staging JMX exporter...")
+    print(ssh(ip, "sudo bash -s", "scripts/install_jmx_exporter.sh").strip())
+    ssh(ip, "cat > /opt/lab/jmx/config.yaml", "grafana/jmx-exporter.yaml")
+
+
 def wait_for_domibus(ip, port, name, timeout=600):
     print(f"Waiting for {name}", end="", flush=True)
     deadline = time.time() + timeout
@@ -39,6 +46,7 @@ def start_domibus(name, ip, nodes):
     # /opt/lab used to be created by install_domibus.sh
     ssh(ip, "sudo mkdir -p /opt/lab && sudo chown ubuntu:ubuntu /opt/lab")
     ssh(ip, "cat > /opt/lab/compose.yaml", "docker/compose.yaml")
+    install_jmx_exporter(ip)   # must be there before the Domibus JVM starts
 
     services = " ".join(nodes + EXPORTERS)
     ssh(ip, f"cd /opt/lab && sudo MACHINE={name} docker compose up -d --quiet-pull {services}")

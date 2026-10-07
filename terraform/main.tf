@@ -51,6 +51,12 @@ resource "aws_security_group" "ssh" {
     self      = true
   }
   ingress {
+    from_port = 9404   # JMX exporter (Domibus JVM/Tomcat/JDBC metrics)
+    to_port   = 9404
+    protocol  = "tcp"
+    self      = true
+  }
+  ingress {
     from_port = 8081   # Domibus blue (AS4 messages between machines)
     to_port   = 8082   # Domibus red
     protocol  = "tcp"

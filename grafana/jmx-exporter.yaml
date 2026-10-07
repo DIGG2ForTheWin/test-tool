@@ -1,0 +1,105 @@
+# Prometheus JMX Exporter (Java agent inside each Domibus JVM, port 9404).
+# Maps the real MBeans of ghcr.io/sputtifrutti/domibus (Tomcat 10.1, Temurin 21, HikariCP 7)
+# to the metric names that grafana/dashboards/03-jvm-domibus-runtime.json queries.
+# Patterns were written against the match strings this image really produces, e.g.
+#   java.lang<name=G1 Young Generation, type=GarbageCollector><>CollectionTime
+#   Catalina<type=ThreadPool, name="http-nio-8080"><>currentThreadsBusy
+#   com.zaxxer.hikari<type=Pool (HikariPool-1)><>ActiveConnections
+#
+# Not exposed on purpose:
+#   domibus_jvm_memory_max_bytes{area="nonheap"} - the JVM reports -1 (no limit configured), not a size.
+
+# Only these MBeans are read; everything else (ActiveMQ, caches, per-servlet beans...) is never queried.
+includeObjectNames:
+  - "java.lang:type=Memory"
+  - "java.lang:type=GarbageCollector,*"
+  - "java.lang:type=Threading"
+  - "java.lang:type=ClassLoading"
+  - "java.lang:type=OperatingSystem"
+  - "java.nio:type=BufferPool,*"
+  - "Catalina:type=ThreadPool,*"
+  - "com.zaxxer.hikari:*"
+
+# Attributes that match no rule are dropped, so the labels below are the only labels there are.
+rules:
+  # ---- JVM ----
+  - pattern: 'java.lang<type=Memory><HeapMemoryUsage>(used|committed|max):'
+    name: domibus_jvm_memory_$1_bytes
+    labels: {area: heap}
+    type: GAUGE
+  - pattern: 'java.lang<type=Memory><NonHeapMemoryUsage>(used|committed):'
+    name: domibus_jvm_memory_$1_bytes
+    labels: {area: nonheap}
+    type: GAUGE
+  # pool: direct | mapped | mapped - 'non-volatile memory'
+  - pattern: 'java.nio<name=(.+), type=BufferPool><>MemoryUsed:'
+    name: domibus_jvm_buffer_pool_used_bytes
+    labels: {pool: "$1"}
+    type: GAUGE
+  # gc: G1 Young Generation | G1 Old Generation | G1 Concurrent GC
+  - pattern: 'java.lang<name=(.+), type=GarbageCollector><>CollectionCount:'
+    name: domibus_jvm_gc_collection_count_total
+    labels: {gc: "$1"}
+    type: COUNTER
+  - pattern: 'java.lang<name=(.+), type=GarbageCollector><>CollectionTime:'
+    name: domibus_jvm_gc_collection_seconds_total
+    labels: {gc: "$1"}
+    type: COUNTER
+    valueFactor: 0.001   # the MBean counts milliseconds
+  - pattern: 'java.lang<type=Threading><>ThreadCount:'
+    name: domibus_jvm_threads_current
+    type: GAUGE
+  - pattern: 'java.lang<type=Threading><>DaemonThreadCount:'
+    name: domibus_jvm_threads_daemon
+    type: GAUGE
+  - pattern: 'java.lang<type=Threading><>PeakThreadCount:'
+    name: domibus_jvm_threads_peak
+    type: GAUGE
+  - pattern: 'java.lang<type=ClassLoading><>LoadedClassCount:'
+    name: domibus_jvm_classes_loaded
+    type: GAUGE
+  - pattern: 'java.lang<type=OperatingSystem><>ProcessCpuLoad:'
+    name: domibus_jvm_process_cpu_load_ratio
+    type: GAUGE
+  - pattern: 'java.lang<type=OperatingSystem><>CpuLoad:'
+    name: domibus_jvm_system_cpu_load_ratio
+    type: GAUGE
+  - pattern: 'java.lang<type=OperatingSystem><>OpenFileDescriptorCount:'
+    name: domibus_jvm_open_file_descriptors
+    type: GAUGE
+
+  # ---- Tomcat (one ThreadPool MBean per connector, here: http-nio-8080) ----
+  - pattern: 'Catalina<type=ThreadPool, name="(.+)"><>currentThreadCount:'
+    name: domibus_tomcat_threads_current
+    labels: {pool: "$1"}
+    type: GAUGE
+  - pattern: 'Catalina<type=ThreadPool, name="(.+)"><>currentThreadsBusy:'
+    name: domibus_tomcat_threads_busy
+    labels: {pool: "$1"}
+    type: GAUGE
+  - pattern: 'Catalina<type=ThreadPool, name="(.+)"><>maxThreads:'
+    name: domibus_tomcat_threads_max
+    labels: {pool: "$1"}
+    type: GAUGE
+  - pattern: 'Catalina<type=ThreadPool, name="(.+)"><>connectionCount:'
+    name: domibus_tomcat_connections_current
+    labels: {connector: "$1"}
+    type: GAUGE
+  - pattern: 'Catalina<type=ThreadPool, name="(.+)"><>maxConnections:'
+    name: domibus_tomcat_connections_max
+    labels: {connector: "$1"}
+    type: GAUGE
+
+  # ---- JDBC (HikariCP; pool = HikariPool-N, Domibus leaves domibus.datasource.poolName empty) ----
+  - pattern: 'com.zaxxer.hikari<type=Pool \((.+)\)><>ActiveConnections:'
+    name: domibus_jdbc_pool_active
+    labels: {pool: "$1"}
+    type: GAUGE
+  - pattern: 'com.zaxxer.hikari<type=Pool \((.+)\)><>IdleConnections:'
+    name: domibus_jdbc_pool_idle
+    labels: {pool: "$1"}
+    type: GAUGE
+  - pattern: 'com.zaxxer.hikari<type=PoolConfig \((.+)\)><>MaximumPoolSize:'
+    name: domibus_jdbc_pool_max
+    labels: {pool: "$1"}
+    type: GAUGE

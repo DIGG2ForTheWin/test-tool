@@ -1,0 +1,12 @@
+apiVersion: 1
+
+providers:
+  - name: Domibus PoC
+    orgId: 1
+    folder: Domibus PoC
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards

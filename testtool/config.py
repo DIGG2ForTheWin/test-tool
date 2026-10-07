@@ -15,6 +15,7 @@ NODES = CONFIG["nodes"]
 EXPORTERS = ["cadvisor", "node-exporter"]
 MONITOR = ["prometheus", "grafana"]
 MONITORING_PORTS = {"grafana": 3000, "prometheus": 9090}
+JMX_EXPORTER_PORT = 9404   # Java agent inside each Domibus JVM (see docker/compose.yaml)
 MONITOR_MACHINE = CONFIG.get("monitoring", {}).get("machine")   # e.g. "monitor"
 PROMETHEUS_CONFIG = "grafana/prometheus.generated.yaml"   # written on every up
 
