@@ -1,7 +1,7 @@
 import argparse
 import sys
 import time
-from config import load_config, get_test_cases
+from testtool.config import load_config, get_test_cases
 from payload import create_payload_info, cleanup_payload
 from ws_client import DomibusWSClient
 from zeep.exceptions import Fault  # Installed via requirements.txt in the Docker image

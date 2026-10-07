@@ -21,7 +21,7 @@ data "aws_ami" "ubuntu" {
 }
 
 resource "aws_security_group" "ssh" {
-  name = "learn-terraform-ssh"
+  name = "terraform-ssh"
 
   ingress {
     from_port       = 22
@@ -76,7 +76,7 @@ resource "aws_instance" "app_server" {
 }
 
 resource "aws_key_pair" "me" {
-  key_name   = "learn-terraform-key"
+  key_name   = "terraform-key"
   public_key = file("../Key.pub")
 }
 
