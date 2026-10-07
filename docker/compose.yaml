@@ -1,28 +1,20 @@
 services:
   blue:
-    image: eclipse-temurin:21-jre
-    container_name: blue-domibus
-    working_dir: /opt/domibus
-    command: ["bin/catalina.sh", "run"]
+    image: ghcr.io/sputtifrutti/domibus
+    container_name: domibus-blue
     volumes:
-      - /opt/lab/blue/domibus:/opt/domibus
+      - ./blue/fs:/opt/domibus/fs_plugin_data 
     ports:
       - "8081:8080"
-    environment:
-      JAVA_OPTS: "-Xms512m -Xmx1536m"
     restart: unless-stopped
 
   red:
-    image: eclipse-temurin:21-jre
-    container_name: red-domibus
-    working_dir: /opt/domibus
-    command: ["bin/catalina.sh", "run"]
+    image: ghcr.io/sputtifrutti/domibus
+    container_name: domibus-red
     volumes:
-      - /opt/lab/red/domibus:/opt/domibus
+      - ./red/fs:/opt/domibus/fs_plugin_data
     ports:
       - "8082:8080"
-    environment:
-      JAVA_OPTS: "-Xms512m -Xmx1536m"
     restart: unless-stopped
  
   prometheus:
