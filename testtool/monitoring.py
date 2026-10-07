@@ -15,10 +15,15 @@ def write_prometheus_config(private_ips):
             # OLD: cadvisor_targets.append({"targets": [f"{ip}:8080"], "labels": {"machine": name}})
             node_targets.append({"targets": [f"{ip}:9100"], "labels": {"instance": name}})
             cadvisor_targets.append({"targets": [f"{ip}:8080"], "labels": {"instance": name}})
-    config = {"scrape_configs": [
+    config = {
+    "global": {
+        "scrape_interval": "5s",
+        "evaluation_interval": "5s",
+    },
+    "scrape_configs": [
         {"job_name": "node", "static_configs": node_targets},
         {"job_name": "cadvisor", "static_configs": cadvisor_targets},
-    ]}
+    ],}
     with open(PROMETHEUS_CONFIG, "w") as f:
         yaml.safe_dump(config, f, sort_keys=False)
 

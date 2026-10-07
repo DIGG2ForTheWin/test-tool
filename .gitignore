@@ -20,3 +20,6 @@ domibus_pass.txt
 *.pem
 token.txt
 /{os.devnull}
+/.tunnel-blue.pid
+/.tunnel-monitor.pid
+/.tunnel-red.pid
