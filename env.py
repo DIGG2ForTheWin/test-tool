@@ -98,6 +98,8 @@ def wait_for_domibus(ip, port, name, timeout=600):
 
 def start_domibus(name, ip, nodes):
     print(f"Starting {', '.join(nodes)}...")
+    # /opt/lab used to be created by install_domibus.sh
+    ssh(ip, "sudo mkdir -p /opt/lab && sudo chown ubuntu:ubuntu /opt/lab")
     ssh(ip, "cat > /opt/lab/compose.yaml", "docker/compose.yaml")
 
     services = " ".join(nodes + EXPORTERS)
@@ -200,7 +202,7 @@ def get_private_ips():
 
 def open_all_tunnels(ips):
     for index, (name, ip) in enumerate(ips.items()):
-        open_tunnel(name, ip, index)
+        open_tunnel(name, ip)
 
 
 def setup_machine(name, ip):
@@ -210,7 +212,7 @@ def setup_machine(name, ip):
     wait_for_ssh(ip)
     install_docker(ip)
     if nodes:
-        install_domibus(ip, nodes)
+        # OLD: install_domibus(ip, nodes)   # Domibus is now inside the Docker image
         # OLD: start_domibus(ip, nodes)
         start_domibus(name, ip, nodes)
     if name == MONITOR_MACHINE:
