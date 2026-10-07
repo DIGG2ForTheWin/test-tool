@@ -40,8 +40,9 @@ def ssh_command(ip):
         "ssh",
         "-i", KEY,
         "-o", "StrictHostKeyChecking=no",
-        "-o", "UserKnownHostsFile=/dev/null",
+        "-o", "UserKnownHostsFile={os.devnull}",
         "-o", "ConnectTimeout=5",
+        "-o", "batchMode=yes",
         "-o", "LogLevel=ERROR",
         f"ubuntu@{ip}",
     ]
@@ -88,7 +89,7 @@ def wait_for_domibus(ip, port, name, timeout=600):
     print(f"Waiting for {name}", end="", flush=True)
     deadline = time.time() + timeout
     while time.time() < deadline:
-        code = ssh(ip, f"curl -s -o /dev/null -w '%{{http_code}}' http://localhost:{port}/domibus/ || true").strip()
+        code = ssh(ip, f"curl -sL -o /dev/null -w '%{{http_code}}' http://localhost:{port}/domibus/ || true").strip()
         if code and code != "000":
             print(f" ready (HTTP {code})")
             return

@@ -19,3 +19,4 @@ domibus_pass.txt
 .env
 *.pem
 token.txt
+/{os.devnull}
