@@ -51,12 +51,6 @@ def down():
         close_tunnel(machine)
     terraform("destroy", "-auto-approve")
 
-def restart():
-    print("Restarting...")
-    down()
-    up()
-
-
 def status():
     print("Checking status...")
     ips = get_ips()
@@ -81,7 +75,6 @@ def main():
 
     sub.add_parser("up", help="Create servers and start Domibus")
     sub.add_parser("down", help="Destroy server")
-    sub.add_parser("restart", help="Restarts server")
     sub.add_parser("status", help="Show whats running")
     sub.add_parser("tunnel", help="(Re)open the SSH tunnel(s) to the running server(s)")
 
@@ -91,8 +84,6 @@ def main():
         up()
     elif args.command == "down":
         down()
-    elif args.command == "restart":
-        restart()
     elif args.command == "status":
         status()
     elif args.command == "tunnel":

@@ -23,7 +23,7 @@ def ssh(ip, command, input_file=None):
                                     capture_output=True, text=True, check=True)
     else:
         result = subprocess.run(ssh_command(ip) + [command],
-                                stdin=subprocess.DEVNULL,           # never wait for keyboard input
+                                stdin=subprocess.DEVNULL,          
                                 capture_output=True, text=True, check=True)
     return result.stdout
 

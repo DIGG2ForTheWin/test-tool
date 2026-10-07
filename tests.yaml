@@ -1,6 +1,7 @@
 # ---- Enviroment setup ----
 infrastructure:
   region: eu-north-1
+  user: username # change
 
   machines:
     - name: blue

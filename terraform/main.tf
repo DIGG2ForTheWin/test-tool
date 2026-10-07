@@ -1,6 +1,7 @@
 locals {
   config = yamldecode(file("${path.module}/../tests.yaml"))
   machines = { for m in local.config.infrastructure.machines : m.name => m }
+  user = local.config.infrastructure.user
 }
 
 provider "aws" {
@@ -21,7 +22,7 @@ data "aws_ami" "ubuntu" {
 }
 
 resource "aws_security_group" "ssh" {
-  name = "terraform-ssh"
+  name = "${local.user}-terraform-ssh"
 
   ingress {
     from_port       = 22
@@ -76,7 +77,7 @@ resource "aws_instance" "app_server" {
 }
 
 resource "aws_key_pair" "me" {
-  key_name   = "terraform-key"
+  key_name   = "${local.user}-terraform-key"
   public_key = file("../Key.pub")
 }
 
