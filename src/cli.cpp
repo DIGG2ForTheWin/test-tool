@@ -40,6 +40,10 @@ Options parse_options(const std::vector<std::string>& args) {
 
         } else if (argument == "--node-config") {
             opt.node_config = next_arg();
+
+        } else if (argument == "--test-config") {
+            opt.test_config = next_arg();
+            
         } else {
             throw UsageError("unknown option: '" + argument + "'");
         } 

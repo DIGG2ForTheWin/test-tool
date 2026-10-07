@@ -5,20 +5,6 @@
 
 namespace {
     namespace fs = std::filesystem;
-    constexpr std::string_view placeholder = "CHANGE_ME";
-
-    YAML::Node read_file(const fs::path& file) {
-        try {
-            const YAML::Node root = YAML::LoadFile(file.string());
-            return root;
-        } 
-        catch(const YAML::BadFile& b){
-            throw ConfigError("cannot open file: " + std::string(b.what()));
-        } 
-        catch(const YAML::Exception& e) {
-            throw ConfigError("YAML error: " + std::string(e.what()));
-        }
-    }
 }
 
 NodeConfig parse_node_config(const fs::path& file) {

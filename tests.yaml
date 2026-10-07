@@ -24,37 +24,28 @@ nodes:
   red:
     port: 8082
     machine: lab-2
-# ---- Domibus instance locations ----
-# The WS plugin requires a plugin user; the admin login for the GUI does not work.
-# Credentials are read from environment variables (see .env.example).
-targets:
-  domibus-red:
-    url: http://domibus-red:8080/domibus
-    user: ${DOMIBUS_RED_USER}
-    password: ${DOMIBUS_RED_PASSWORD}
-  domibus-blue:
-    url: http://domibus-blue:8080/domibus
-    user: ${DOMIBUS_BLUE_USER}
-    password: ${DOMIBUS_BLUE_PASSWORD}
 
-pmode:
-  repo: org/domibus-pmodes
-  path: pmodes/red-blue.xml
+# --------------------- tester (test program) ---------------------
+# Node names (red/blue) are used as AS4 party ids and must match the PMode.
+tester:
+  blue_pmode: pmodes/blue_pmode.xml        # relative to this file; version chosen with git
+  red_pmode: pmodes/red_pmode.xml
 
-# ---- Tests ----
-tests:
-  - name: small_files
-    from: domibus-red
-    to: domibus-blue
-    file_size_kb: 10
-    count: 10
-  - name: medium_under_2gb
-    from: domibus-red
-    to: domibus-blue
-    file_size_kb: 500000   # ~500 MB
-    count: 1
-  - name: large_over_2gb
-    from: domibus-red
-    to: domibus-blue
-    file_size_kb: 2300000  # ~2.2 GB 
-    count: 1
+  message:                          # header values for metadata.xml – must match the PMode
+    party_id_type: urn:oasis:names:tc:ebcore:partyid-type:unregistered
+    sender_role: http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/sender
+    receiver_role: http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/receiver
+    service: bdx:noprocess
+    service_type: tc1
+    action: TC1Leg1
+
+  tests:
+    - name: small_files
+      from: red
+      to: blue
+      size: 10 KiB
+      count: 10
+    - name: dicom_sample
+      from: blue
+      to: red
+      file: dicom/ct_scan_01.dcm    # relative to <data_root>/testfiles

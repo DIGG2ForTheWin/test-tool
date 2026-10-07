@@ -4,7 +4,7 @@
 namespace {
     namespace fs = std::filesystem;
 
-    void check_url (const NodeEndpoint& endpoint, const std::string& which_node ) {
+    void check_url (const NodeEndpoint& endpoint, const std::string& which_node) {
         if (endpoint.url.ends_with("/")) {
             throw ConfigError("'nodes." + which_node + ".url' has ending slash (/)");
         }
@@ -51,6 +51,7 @@ RunConfig resolve(const NodeConfig& file, const Options& cli) {
             throw ConfigError("unknown node from --node '" + *cli.node + "'; " 
             + file.source.filename().string() + " defines: " + available_nodes);
         }
+
         auto config_name = file.source.filename().string();
         throw ConfigError("unknown node from " + config_name + " '" + run_config.node + "'; " 
             + config_name + " defines: " + available_nodes);

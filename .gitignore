@@ -16,6 +16,7 @@ domibus_pass.txt
 ._*
 /build
 node.yaml
+/pmode
 
 # Secrets
 .env

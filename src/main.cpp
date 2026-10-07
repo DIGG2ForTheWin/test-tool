@@ -6,11 +6,12 @@
 #include "node_config.h"
 #include "run_config.h"
 #include "errors.h"
+#include "test_config.h"
 
 namespace {
     namespace fs = std::filesystem;
     constexpr std::string_view error_prefix = "tester: error: ";
-    constexpr std::string_view usage = "\nusage: tester run <test...|all> [--node <name>] [--data-root <path>] [--node-config <path>]";
+    constexpr std::string_view usage = "\nusage: tester run <test...|all> [--node <name>] [--data-root <path>] [--node-config <path>] [--test-config <path>]";
     
     enum {
         success = 0,
@@ -42,6 +43,7 @@ namespace {
 int main(int argc, char* argv[]) {
     std::vector<std::string> args;
     fs::path default_node_config = "node.yaml";
+    fs::path default_test_config = "tests.yaml";
    
 
     for(int i = 1; i < argc; ++i) {
@@ -52,6 +54,7 @@ int main(int argc, char* argv[]) {
         Options cli = parse_options(args);
         NodeConfig file = parse_node_config(cli.node_config.value_or(default_node_config));
         RunConfig run_config = resolve(file, cli);
+        TestConfig test_config = parse_test_config(cli.test_config.value_or(default_test_config), run_config);
         
         print_run_config(run_config);
     }
