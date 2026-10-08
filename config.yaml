@@ -1,0 +1,25 @@
+infrastructure:
+  region: eu-north-1
+  user: Patrik # change
+
+  machines:
+    - name: blue
+      instance_type: m7i-flex.large
+      storage_gb: 16
+    - name: red
+      instance_type: m7i-flex.large
+      storage_gb: 16
+    - name: monitor
+      instance_type: t3.small
+      storage_gb: 8
+            
+monitoring:
+  machine: monitor
+
+nodes:
+  blue:
+    port: 8081
+    machine: blue
+  red:
+    port: 8082
+    machine: red

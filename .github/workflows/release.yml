@@ -1,0 +1,55 @@
+# Push a tag like v0.1.0 -> builds dset for Linux, Mac (Apple Silicon + Intel) and Windows,
+# zips each with the project files and attaches the zips to a GitHub Release.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write   # needed to create the Release
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - { os: ubuntu-latest,  target: x86_64-unknown-linux-gnu, name: linux-x86_64 }
+          - { os: macos-latest,   target: aarch64-apple-darwin,     name: macos-arm64 }
+          - { os: macos-latest,   target: x86_64-apple-darwin,      name: macos-x86_64 }
+          - { os: windows-latest, target: x86_64-pc-windows-msvc,   name: windows-x86_64 }
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Build
+        working-directory: env-rs
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Package
+        shell: bash
+        run: |
+          EXT=""; [ "$RUNNER_OS" = "Windows" ] && EXT=".exe"
+          DIR="dset-${{ github.ref_name }}-${{ matrix.name }}"
+          mkdir -p "$DIR/terraform" "$DIR/grafana" "$DIR/portal" "$DIR/keys"
+
+          # Only named files are copied, so tfstate, keys and generated files can never end up in a zip
+          cp "env-rs/target/${{ matrix.target }}/release/dset$EXT" "$DIR/"
+          cp config.example.yaml           "$DIR/config.yaml"
+          cp terraform/main.tf             "$DIR/terraform/"
+          cp grafana/datasource.yaml       "$DIR/grafana/"
+          cp portal/portal.html portal/script.js portal/style.css "$DIR/portal/"
+          cp -r docker scripts             "$DIR/"
+          cp README.md                     "$DIR/"
+          touch "$DIR/keys/.keep"          # zip tools skip empty folders
+
+          if [ "$RUNNER_OS" = "Windows" ]; then 7z a "$DIR.zip" "$DIR"; else zip -r "$DIR.zip" "$DIR"; fi
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dset-*.zip
