@@ -73,6 +73,9 @@ resource "aws_instance" "app_server" {
   tags = {
     Name = "${local.user}-${each.value.name}"
   }
+
+  user_data = file("${path.module}/../scripts/install_docker.sh")
+
 }
 
 resource "aws_key_pair" "me" {

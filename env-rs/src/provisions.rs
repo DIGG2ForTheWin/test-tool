@@ -26,22 +26,35 @@ pub fn compose_up(ip: &str, machine: &str, services: &[&str]) -> Result<(), Stri
     Ok(())
 }
 
-pub fn install_docker(ip: &str) -> Result<(), String> {
+pub fn _install_docker(ip: &str) -> Result<(), String> {
     let docker_script = Some(Path::new("scripts/install_docker.sh"));
     ssh(ip, &["sudo bash -s"], docker_script)?;
     Ok(())
 }
 
+pub fn _install_terminal(ip: &str) -> Result<(), String> {
+    let script = Some(Path::new("scripts/install_terminal.sh"));
+    ssh(ip, &["sudo bash -s"], script)?;
+    Ok(())
+}
+
+pub fn wait_for_boot_script(ip: &str) -> Result<(), String> {
+    ssh(ip, &["cloud-init status --wait > /dev/null"], None)?;
+    Ok(())
+}
+
+
 pub fn setup_machine(name: &str, ip: &str, config: &Config, private_ips: &HashMap<String, String>, creds: &Credentials) -> Result<(), String> {
     println!("{name}, waiting for SSH on {ip}");
     wait_for_ssh(ip)?;
 
-    println!("{name} installing Docker");
-    install_docker(ip)?;
-    match ssh(ip, &["docker --version && docker compose version"], None) {
-        Ok(out) => println!("{name}, {}", out.trim()),
-        Err(e) => println!("{name}, {e}"),
-    };
+    // println!("{name} installing Docker");
+    // install_docker(ip)?;
+
+    wait_for_boot_script(ip)?;
+
+    let version = ssh(ip, &["docker --version && docker compose version"], None)?;
+    println!("[{name}] {}", version.trim());
 
     let nodes = config.nodes_on(name);
     if !nodes.is_empty() {
@@ -60,6 +73,9 @@ pub fn setup_machine(name: &str, ip: &str, config: &Config, private_ips: &HashMa
         println!("[{name}] starting Prometheus and Grafana");
         start_monitoring(ip)?;
     }
+
+    // println!("[{name}] installing web terminal");
+    // install_terminal(ip)?;
 
     println!("{name} done");
     Ok(())

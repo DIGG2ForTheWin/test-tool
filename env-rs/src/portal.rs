@@ -2,7 +2,7 @@ use std::{collections::HashMap, fs, process::{Command, Stdio}};
 
 use serde_json::json;
 
-use crate::config::Config;
+use crate::{config::Config, tunnels::terminal_port};
 
 const LAB_JS: &str = "portal/lab.js";
 const PORTAL: &str = "portal/portal.html";
@@ -30,6 +30,11 @@ pub fn write_portal(
             links.push(json!({ "label": "Grafana", "url": "http://localhost:3000" }));
             links.push(json!({ "label": "Prometheus", "url": "http://localhost:9090" }));
         }
+
+        // links.push(json!({
+        //     "label": "Terminal",
+        //     "url": format!("http://localhost:{}", terminal_port(name, public_ips)),
+        // }));
 
         machines.push(json!({
             "name": name,

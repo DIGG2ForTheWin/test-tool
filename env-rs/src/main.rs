@@ -1,6 +1,6 @@
 use std::{env, thread};
 
-use crate::{config::Config, infra::*, provisions::setup_machine, tunnels::open_tunnels};
+use crate::{config::Config, infra::*, portal::{open_portal, write_portal}, provisions::setup_machine, tunnels::open_tunnels};
 
 mod infra;
 mod remote;
@@ -12,7 +12,7 @@ mod portal;
 mod nodefile;
 mod root;
 
-fn up() -> Result<(), String>{
+fn up() -> Result<(), String> {
     
     let config = Config::load()?;
 
@@ -23,15 +23,11 @@ fn up() -> Result<(), String>{
     let private_ips = get_private_ips()?;
     monitoring::write_prometheus_config(&private_ips, &config)?;
     
-
     let creds = nodefile::Credentials::load()?;
 
     let config = &config;
     let private_ips_ref = &private_ips;
     let creds = &creds;
-
-    portal::write_portal(&public_ips, &private_ips, config)?;
-    portal::open_portal()?;
 
     thread::scope(|s| {
         for (name, ip) in &public_ips {
@@ -43,6 +39,8 @@ fn up() -> Result<(), String>{
         }
     });
 
+    write_portal(&public_ips, &private_ips, config)?;
+    open_portal()?;
     open_tunnels()?;
 
     Ok(())
@@ -53,11 +51,12 @@ fn tunnel() -> Result<(), String> {
     portal::write_portal(&get_public_ips()?, &get_private_ips()?, &config)?;
     portal::open_portal()?;
     open_tunnels()
+    
 }
 
 fn down() -> Result<(), String> {
+    println!("Destroying...");
     destroy_terraform()?;
-
     Ok(())
 }
 

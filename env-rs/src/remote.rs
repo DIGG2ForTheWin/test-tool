@@ -19,7 +19,6 @@ pub fn ssh_base(ip: &str) -> Command {
 
 
 pub fn ssh(ip: &str, args: &[&str], script: Option<&Path>) -> Result<String, String> {
-
     let stdin = match script {
         Some(path) => {
             let file = File::open(path)
