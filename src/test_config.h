@@ -5,15 +5,18 @@
 #include <variant>
 #include <filesystem>
 #include <cstdint>
-#include <optional>
-#include "run_config.h"
+#include <vector>
+#include <map>
+
+struct GeneratedFile { std::uint64_t size_bytes; };
+struct ExistingFile { std::filesystem::path path; };
 
 struct TestCase {
     std::string name;
     std::string from;
     std::string to;
-    std::optional<int> count;           //1 if not defined in test.yaml
-    std::variant<int, std::string> payload; //std::variant<std::uint64_t, std::filesystem::path> payload;
+    std::uint64_t count = 1;           
+    std::variant<GeneratedFile, ExistingFile> payload; 
 };
 
 struct MessageHeader {
@@ -26,15 +29,14 @@ struct MessageHeader {
 };
 
 struct TestConfig {
-    std::filesystem::path this_pmode;
-    std::filesystem::path other_pmode;
+    std::map<std::string, std::filesystem::path> pmodes;
     MessageHeader message_header;
     std::vector<TestCase> tests;
     std::filesystem::path source;
 };
 
 
-TestConfig parse_test_config(const std::filesystem::path& file, const RunConfig& run_config);
+TestConfig parse_test_config(const std::filesystem::path& file);
 
 
 #endif

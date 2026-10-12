@@ -8,23 +8,12 @@ namespace {
 }
 
 NodeConfig parse_node_config(const fs::path& file) {
-    
-    if (!fs::exists(file)) {
-        throw ConfigError("'" + fs::absolute(file).string() 
-            + "' dosen't exist (use example.node.yaml to create node.yaml)");
-    }
-
-    if (!fs::is_regular_file(file)) {
-        throw ConfigError("'" + fs::absolute(file).string() 
-            + "' isn't a file (use example.node.yaml to create node.yaml)");
-    }
-
     NodeConfig config;
-    config.source = file;
 
-    try
-    {
-        const YAML::Node root = read_file(file);
+    try {
+        const YAML::Node root = read_file(file, "(use example.node.yaml to create node.yaml)");
+
+        config.source = file;
 
         if (!root.IsMap()) {
             throw ConfigError("'" + fs::absolute(file).string() + "' is empty or not a YAML map");
@@ -33,21 +22,9 @@ NodeConfig parse_node_config(const fs::path& file) {
         config.node = get_value(root, "node");
         config.data_root = get_value(root, "data_root");
 
-        const YAML::Node nodes = root["nodes"];
-
-        if (!nodes.IsDefined()) {
-            throw ConfigError("missing key: 'nodes'");
-        }
-
-        if (nodes.IsNull()) {
-            throw ConfigError("'nodes' is empty");
-        }
-
-        if (!nodes.IsMap()) {
-            throw ConfigError("'nodes' is not a map");
-        }
+        const YAML::Node nodes = get_map(root, "nodes");
         
-        for (const auto &entry : nodes) {
+        for (const auto& entry : nodes) {
             std::string key = entry.first.as<std::string>();
             const YAML::Node value = entry.second;
 
@@ -65,8 +42,7 @@ NodeConfig parse_node_config(const fs::path& file) {
             config.nodes[key] = n;
         }
     }
-    catch(const ConfigError& c)
-    {
+    catch(const ConfigError& c) {
         throw ConfigError(file.filename().string() + ": " + c.what());
     }
 

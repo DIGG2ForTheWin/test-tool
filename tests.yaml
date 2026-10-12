@@ -28,8 +28,9 @@ nodes:
 # --------------------- tester (test program) ---------------------
 # Node names (red/blue) are used as AS4 party ids and must match the PMode.
 tester:
-  blue_pmode: pmodes/blue_pmode.xml        # relative to this file; version chosen with git
-  red_pmode: pmodes/red_pmode.xml
+  pmodes:
+    blue: pmode/blue_pmode.xml        # relative to this file; version chosen with git
+    red: pmode/red_pmode.xml
 
   message:                          # header values for metadata.xml – must match the PMode
     party_id_type: urn:oasis:names:tc:ebcore:partyid-type:unregistered
@@ -41,11 +42,11 @@ tester:
 
   tests:
     - name: small_files
-      from: red
-      to: blue
-      size: 10 KiB
+      from: blue
+      to: red
+      size: 50 KiB   #Use KiB/MiB/GiB 
       count: 10
     - name: dicom_sample
       from: blue
       to: red
-      file: dicom/ct_scan_01.dcm    # relative to <data_root>/testfiles
+      file: dicom/0002.DCM    # relative to <data_root>/testfiles

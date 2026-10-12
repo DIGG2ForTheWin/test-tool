@@ -1,44 +1,233 @@
 #include "test_config.h"
 #include "yaml_util.h"
 #include "errors.h"
-
-//includes for testing/development
-#include <iostream>
+#include <algorithm>
+#include <cctype>
+#include <filesystem>
+#include <optional>
+#include <stdexcept>
+#include <string>
+#include <map>
+#include <limits>
 
 namespace {
     namespace fs = std::filesystem;
+    const std::map<std::string, std::uint64_t> units {{"B", 1ULL},
+                                                {"KiB", 1ULL << 10},
+                                                {"MiB", 1ULL << 20},
+                                                {"GiB", 1ULL << 30}};
 
+    const std::map<std::string, std::string> unit_tips = {{"KB", "KiB"},
+                                                        {"kB", "KiB"},
+                                                        {"Kb", "KiB"},
+                                                        {"kb", "KiB"},
+                                                        {"MB", "MiB"},
+                                                        {"mB", "MiB"},
+                                                        {"Mb", "MiB"},
+                                                        {"mb", "MiB"}, 
+                                                        {"GB", "GiB"},
+                                                        {"gB", "GiB"},
+                                                        {"Gb", "GiB"},
+                                                        {"gb", "GiB"}};
+
+    std::uint64_t parse_unsigned(const std::string& text, const std::string& full_key) {
+        bool only_digits = std::ranges::all_of(text, [](unsigned char c) {
+            return std::isdigit(c) != 0;
+        });
+
+        if (!only_digits) {
+            throw ConfigError("'" + full_key + "' must be a whole number, got '" + text + "'");
+        }
+
+        try {
+            return static_cast<std::uint64_t>(std::stoull(text));
+        } catch (const std::out_of_range&) {
+            throw ConfigError("'" + full_key + "' is too large, got '" + text + "'");
+        }
+    }
+    
+    std::uint64_t parse_count(const std::string& number, const std::string& full_key) {
+       
+        const auto count = parse_unsigned(number, full_key);
+
+        if (count == 0) {
+            throw ConfigError("'" + full_key + "' can't be less than 1, got '" + std::to_string(count) + "'");
+        }
+
+        return count;
+    }
+
+    std::uint64_t parse_size(const std::string& text, const std::string& full_key) {
+        const std::size_t pos = text.find_first_not_of("0123456789");
+        
+        if (pos == std::string::npos) {
+            throw ConfigError("'" + full_key + "' is missing a unit (B, KiB, MiB, GiB), got '" + text + "'");
+        }
+
+        if (pos == 0) {
+            throw ConfigError("'" + full_key + "' must start with a number, got '" + text + "'");
+        }
+
+        std::string text_unit = text.substr(pos);
+
+        if(text_unit.starts_with(' ')) text_unit = text_unit.substr(1);
+
+        if (text_unit.empty()) {
+            throw ConfigError("'" + full_key + "' is missing a unit (B, KiB, MiB, GiB), got '" + text + "'");
+        }
+
+        auto it = units.find(text_unit);
+
+        if (it == units.end()) {
+            const std::string all = "B, KiB, MiB or GiB";
+            const auto unit_it = unit_tips.find(text_unit);
+
+            const std::string tip = (unit_it != unit_tips.end()) ? "(use " + unit_it->second + ")" 
+                                                                    : "(use " + all + ")";
+
+            throw ConfigError("'" + full_key + "' has unknown unit '" + text_unit + "' " + tip);
+        }
+
+        const auto multiplier = it->second;
+        const auto value = parse_unsigned(text.substr(0,pos), full_key);
+        const auto max_in_unit = std::numeric_limits<std::uint64_t>::max() / multiplier;
+
+        if (value > max_in_unit) {
+            throw ConfigError("'" + full_key + "' is too large, got '" + text + "' (max is " 
+                + std::to_string(max_in_unit) + " " + text_unit + ")");
+        }
+
+        if (value == 0) {
+            throw ConfigError("'" + full_key + "' must be greater than 0, got '" + text + "'");
+        }
+
+        return value * multiplier;
+    }
 }
 
 
-TestConfig parse_test_config(const fs::path& file, const RunConfig& run_config) {
-    if (!fs::exists(file)) {
-        throw ConfigError("'" + fs::absolute(file).string() + "' dosen't exist");
-    }
-
-    if (!fs::is_regular_file(file)) {
-        throw ConfigError("'" + fs::absolute(file).string() + "' isn't a file");
-    }
+TestConfig parse_test_config(const fs::path& file) {
+    
 
     TestConfig config;
-    config.source = file;
+    
 
     try {
         const YAML::Node root = read_file(file);
+        config.source = file;
 
-        if (!root.IsMap()) {
-            throw ConfigError("'" + fs::absolute(file).string() + "' is empty or not a YAML map");
+        const YAML::Node tester = get_map(root, "tester");
+        
+        const YAML::Node pmodes = get_map(tester, "pmodes", "tester");
+
+        const fs::path base_dir = fs::absolute(file).parent_path();
+        for (const auto& entry: pmodes) {
+            const auto key = entry.first.as<std::string>();
+            const auto path = get_value(pmodes, key, "tester.pmodes");
+            config.pmodes[key] = base_dir / path;
         }
 
-        const auto this_pmode = run_config.node + "_pmode";
-        const auto other_pmode = run_config.other_node + "_pmode";
+        const YAML::Node message = get_map(tester, "message", "tester");
 
-        
+        const std::string message_prefix = "tester.message";
+
+        config.message_header.party_id_type = get_value(message, "party_id_type", message_prefix);
+        config.message_header.sender_role = get_value(message, "sender_role", message_prefix);
+        config.message_header.receiver_role = get_value(message, "receiver_role", message_prefix);
+        config.message_header.service = get_value(message, "service", message_prefix);
+        config.message_header.service_type = get_value(message, "service_type", message_prefix);
+        config.message_header.action = get_value(message, "action", message_prefix);
+
+        const YAML::Node tests = get_sequence(tester, "tests", "tester");
+
+        std::map<std::string, std::size_t> seen_names;
+        for (std::size_t index = 0; index < tests.size(); ++index) {
+            const std::string index_prefix = "tester.tests[" + std::to_string(index) + "]";
+            const YAML::Node test = tests[index];
+
+            if (!test.IsMap()) {
+                throw ConfigError("'" + index_prefix + "' must be a map");
+            }
+
+            TestCase test_case;
+
+            test_case.name = get_value(test, "name", index_prefix);
+
+            const auto is_valid_front = [] (unsigned char c) {
+                return std::isdigit(c) || std::islower(c);
+            };
+
+            if (!test_case.name.empty() && !is_valid_front(test_case.name.front())) {
+                throw ConfigError("'" + index_prefix + ".name' must begin with a letter (a-z) or number (0-9), got '" + test_case.name + "'");
+            }
+            
+            bool valid_char = std::ranges::all_of(test_case.name, [] (unsigned char c) {
+                return std::isdigit(c) || std::islower(c) || c == '-' || c == '_';
+            });
+
+            if (!valid_char) {
+                throw ConfigError("'" + index_prefix + ".name' may only contain a-z, 0-9, '_' and '-', got '" + test_case.name + "'");
+            }
+
+            auto [it, inserted] = seen_names.insert({test_case.name, index});
+            if (!inserted) {
+                throw ConfigError("'" + index_prefix + "' duplicate test name '" + test_case.name + "' (also used by tester.tests[" 
+                    + std::to_string(it->second) + "])");
+            }
+
+            const std::string prefix = "tester.tests[" + test_case.name + "]";
+
+            test_case.from = get_value(test, "from", prefix);
+            test_case.to = get_value(test, "to", prefix);
+            
+
+            if (test_case.to == test_case.from) {
+                throw ConfigError("'" + prefix + "' ''from' and 'to' must differ, both are '" + test_case.from + "'");
+            }
+
+            if (const auto value = get_optional_value(test, "count", prefix); value) {
+                test_case.count = parse_count(*value, prefix + ".count");
+            }
+
+            std::optional<std::string> size = get_optional_value(test, "size", prefix);
+            std::optional<std::string> file_value = get_optional_value(test, "file", prefix);
+
+            if (size && file_value) {
+                throw ConfigError("'" + prefix + "' must have either 'size' or 'file', not both");
+            }
+
+            if (!size && !file_value) {
+                throw ConfigError("'" + prefix + "' must have 'size' or 'file'");
+            }
+
+            if (size) {
+                const std::string full_key = prefix + ".size";
+                test_case.payload = GeneratedFile { parse_size(*size, full_key) };
+            }
+
+            if (file_value) {
+                const std::string full_key = prefix + ".file";
+                const fs::path path = *file_value;
+
+                if (path.is_absolute()) {
+                    throw ConfigError("'" + full_key + "' must be relative to <data_root>/testfiles, got '" + path.string() + "'");
+                }
+
+                for (const auto& part: path) {
+                    if (part == "..") {
+                        throw ConfigError("'" + full_key + "' must not contain '..', got '" + path.string() + "'");
+                    }
+                }
+                test_case.payload = ExistingFile { path };
+            }
+
+            config.tests.push_back(test_case);
+        }
 
     }
     catch(const ConfigError& c)
     {
-        throw ConfigError(file.filename().string() + ": " + c.what());;
+        throw ConfigError(file.filename().string() + ": " + c.what());
     }
     
     return config;

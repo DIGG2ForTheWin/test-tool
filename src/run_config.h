@@ -6,6 +6,7 @@
 #include <vector>
 #include "node_config.h"
 #include "cli.h"
+#include "test_config.h"
 
 struct RunConfig {
     std::string node;
@@ -15,9 +16,14 @@ struct RunConfig {
     NodeEndpoint this_endpoint;
     NodeEndpoint other_endpoint;
 
-    std::vector<std::string> tests;
+    std::filesystem::path this_pmode;
+    std::filesystem::path other_pmode;
+
+    std::vector<TestCase> tests;
+
+    MessageHeader message_header;
 };
 
-RunConfig resolve(const NodeConfig& file, const Options& cli);
+RunConfig resolve(const NodeConfig& file, const Options& cli, const TestConfig& test_file);
 
 #endif

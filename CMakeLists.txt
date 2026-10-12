@@ -20,5 +20,5 @@ add_executable(tester
 find_package(yaml-cpp REQUIRED)
 target_link_libraries(tester PRIVATE yaml-cpp::yaml-cpp)
 
-target_compile_options(tester PRIVATE -Wall -Wextra -fsanitize=address -g)
+target_compile_options(tester PRIVATE -Wall -Wextra -Wshadow -fsanitize=address -g)
 target_link_options(tester PRIVATE -fsanitize=address)
