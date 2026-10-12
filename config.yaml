@@ -5,10 +5,10 @@ infrastructure:
   machines:
     - name: blue
       instance_type: m7i-flex.large
-      storage_gb: 16
+      storage_gb: 50
     - name: red
       instance_type: m7i-flex.large
-      storage_gb: 16
+      storage_gb: 50
     - name: monitor
       instance_type: t3.small
       storage_gb: 8

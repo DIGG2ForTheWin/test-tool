@@ -38,8 +38,8 @@ resource "aws_security_group" "ssh" {
   }
   
   ingress {
-    from_port = 8080   
-    to_port   = 8080
+    from_port = 8088   
+    to_port   = 8088
     protocol  = "tcp"
     self      = true
   }
@@ -52,6 +52,12 @@ resource "aws_security_group" "ssh" {
   ingress {
     from_port = 8081
     to_port   = 8082   
+    protocol  = "tcp"
+    self      = true
+  }
+  ingress {
+    from_port = 9404
+    to_port   = 9404
     protocol  = "tcp"
     self      = true
   }
@@ -74,7 +80,12 @@ resource "aws_instance" "app_server" {
     Name = "${local.user}-${each.value.name}"
   }
 
-  user_data = file("${path.module}/../scripts/install_docker.sh")
+  user_data = join("\n", [
+    file("${path.module}/../scripts/install_docker.sh"),
+    file("${path.module}/../scripts/install_terminal.sh"),
+    file("${path.module}/../scripts/install_jmx_exporter.sh"),
+  ])
+  user_data_replace_on_change = true
 
 }
 

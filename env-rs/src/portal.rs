@@ -31,10 +31,10 @@ pub fn write_portal(
             links.push(json!({ "label": "Prometheus", "url": "http://localhost:9090" }));
         }
 
-        // links.push(json!({
-        //     "label": "Terminal",
-        //     "url": format!("http://localhost:{}", terminal_port(name, public_ips)),
-        // }));
+        links.push(json!({
+            "label": "Terminal",
+            "url": format!("http://localhost:{}", terminal_port(name, public_ips)),
+        }));
 
         machines.push(json!({
             "name": name,

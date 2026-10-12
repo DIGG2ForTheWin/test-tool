@@ -1,53 +1,87 @@
+x-logging: &logging             
+  driver: json-file
+  options: { max-size: "50m", max-file: "5" }
+
+x-domibus: &domibus              
+  image: ${DOMIBUS_IMAGE:-ghcr.io/sputtifrutti/domibus}
+  restart: unless-stopped
+  logging: *logging
+  cpus: ${DOMIBUS_CPUS:-0}       
+  mem_limit: ${DOMIBUS_MEM:-0}   
+  environment:
+    CATALINA_OPTS: >-
+      -Dorg.apache.cxf.attachment-max-size=-1
+      -javaagent:/opt/jmx/jmx_prometheus_javaagent.jar=9404:/opt/jmx/config.yaml
+      -Dhikaricp.configurationFile=/opt/jmx/hikari.properties
+      ${JVM_OPTS:-}
+
 services:
   blue:
-    image: ghcr.io/sputtifrutti/domibus
+    <<: *domibus
     container_name: domibus-blue
+    ports: ["8081:8080", "9404:9404"]
     volumes:
-      - ./blue/fs:/opt/domibus/fs_plugin_data 
-    ports:
-      - "8081:8080"
-    restart: unless-stopped
+      - ./blue/fs:/opt/domibus/fs_plugin_data
+      - ./blue/logs:/opt/domibus/logs
+      - ./blue/payloads:/opt/domibus/payloads
+      - ./blue/temp:/opt/domibus/temp
+      - ./jmx:/opt/jmx:ro
 
   red:
-    image: ghcr.io/sputtifrutti/domibus
+    <<: *domibus
     container_name: domibus-red
+    ports: ["8082:8080", "9404:9404"]
     volumes:
       - ./red/fs:/opt/domibus/fs_plugin_data
-    ports:
-      - "8082:8080"
-    restart: unless-stopped
- 
+      - ./red/logs:/opt/domibus/logs
+      - ./red/payloads:/opt/domibus/payloads
+      - ./red/temp:/opt/domibus/temp
+      - ./jmx:/opt/jmx:ro
+
   prometheus:
     image: prom/prometheus
-    command:
-      - "--config.file=/etc/prometheus/prometheus.yaml"
-      - "--storage.tsdb.path=/prometheus"
+    restart: unless-stopped
+    logging: *logging
+    command: ["--config.file=/etc/prometheus/prometheus.yaml", "--storage.tsdb.path=/prometheus"]
     volumes:
-      - ./prometheus.yaml:/etc/prometheus/prometheus.yaml
-    ports:
-      - "9090:9090"
+      - ./prometheus.yaml:/etc/prometheus/prometheus.yaml:ro
+      - prometheus-data:/prometheus         
+    ports: ["9090:9090"]
 
   grafana:
     image: grafana/grafana
-    ports:
-      - "3000:3000"
+    restart: unless-stopped
+    logging: *logging
     environment:
       GF_SECURITY_ADMIN_PASSWORD: admin
     volumes:
-      - ./datasource.yaml:/etc/grafana/provisioning/datasources/datasource.yaml
+      - ./datasource.yaml:/etc/grafana/provisioning/datasources/datasource.yaml:ro
+      - ./dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml:ro
+      - ./dashboards:/var/lib/grafana/dashboards:ro
+    ports: ["3000:3000"]
 
   cadvisor:
     image: gcr.io/cadvisor/cadvisor
+    restart: unless-stopped
+    logging: *logging
+    privileged: true
+    devices: ["/dev/kmsg"]
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:ro
       - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
-    ports:
-      - "8080:8080"   
+    ports: ["8088:8080"]                       
 
   node-exporter:
     image: prom/node-exporter
-    hostname: ${MACHINE:-node}
-    ports:
-      - "9100:9100"   #
+    restart: unless-stopped
+    logging: *logging
+    network_mode: host                        
+    pid: host
+    command: ["--path.rootfs=/host"]
+    volumes:
+      - /:/host:ro,rslave                      
+
+volumes:
+  prometheus-data:

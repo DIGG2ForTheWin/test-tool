@@ -7,9 +7,13 @@ pub const LAB: &str = "/opt/lab";
 pub fn create_folders(ip: &str, nodes: &[&str]) -> Result<(), String> {
     let mut folders = vec![LAB.to_string()];
     for node in nodes {
-        folders.push(format!("{LAB}/{node}/fs"));
+        // fs = FS plugin, logs/payloads/temp = Domibus files kept on the host (see compose.yaml)
+        for sub in ["fs", "logs", "payloads", "temp"] {
+            folders.push(format!("{LAB}/{node}/{sub}"));
+        }
         folders.push(data_root(node));
     }
+    folders.push(format!("{LAB}/jmx")); // JMX exporter jar (from user_data) + its config
     let cmd = format!("sudo mkdir -p {} && sudo chown -R ubuntu:ubuntu {LAB}", folders.join(" "));
     ssh(ip, &[&cmd], None)?;
     Ok(())
@@ -61,6 +65,8 @@ pub fn setup_machine(name: &str, ip: &str, config: &Config, private_ips: &HashMa
         println!("[{name}] creating folders");
         create_folders(ip, &nodes)?;
         write_node_files(ip, name, config, private_ips, creds)?;
+        upload(ip, "grafana/jmx-exporter.yaml", &format!("{LAB}/jmx/config.yaml"))?;
+        upload(ip, "grafana/hikari.properties", &format!("{LAB}/jmx/hikari.properties"))?;
         upload(ip, "docker/compose.yaml", &format!("{LAB}/compose.yaml"))?;
 
         let mut services = nodes.clone();

@@ -1,0 +1,6 @@
+# JMX exporter config, uploaded to /opt/lab/jmx/config.yaml (mounted as /opt/jmx/config.yaml).
+# Heap, GC and threads come built in; this exports every MBean as well (Tomcat thread pools, Hikari pool ...).
+lowercaseOutputName: true
+lowercaseOutputLabelNames: true
+rules:
+  - pattern: ".*"

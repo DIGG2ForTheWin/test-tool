@@ -1,0 +1,8 @@
+# Grafana loads every dashboard JSON in /var/lib/grafana/dashboards (= grafana/dashboards/ here)
+apiVersion: 1
+providers:
+  - name: lab
+    folder: Domibus Lab
+    type: file
+    options:
+      path: /var/lib/grafana/dashboards
