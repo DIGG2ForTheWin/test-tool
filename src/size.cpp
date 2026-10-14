@@ -1,14 +1,29 @@
 #include "size.h"
 #include "errors.h"
+#include <iomanip>
 #include <map>
+#include <ostream>
+#include <sstream>
 #include <string>
 #include <cstdint>
+#include <array>
+#include <ranges>
 
 namespace {
-    const std::map<std::string, std::uint64_t> units {{"B", 1ULL},
-                                                {"KiB", 1ULL << 10},
-                                                {"MiB", 1ULL << 20},
-                                                {"GiB", 1ULL << 30}};
+    struct UnitSize{
+        std::string_view name;
+        std::uint64_t bytes;
+    };  
+
+    constexpr std::array units = {
+        UnitSize{"B", 1ULL},
+        UnitSize{"KiB", 1ULL << 10},
+        UnitSize{"MiB", 1ULL << 20},
+        UnitSize{"GiB", 1ULL << 30},
+    };
+
+    static_assert(std::ranges::is_sorted(units, {}, &UnitSize::bytes), "units must be sorted from smallest to largest");
+    static_assert(units.front().bytes == 1, "smallest unit must be 1 byte");
 
     const std::map<std::string, std::string> unit_tips = {{"KB", "KiB"},
                                                         {"kB", "KiB"},
@@ -60,7 +75,7 @@ std::uint64_t parse_size(const std::string& text, const std::string& full_key) {
         throw ConfigError("'" + full_key + "' is missing a unit (B, KiB, MiB, GiB), got '" + text + "'");
     }
 
-    auto it = units.find(text_unit);
+    auto it = std::ranges::find(units, text_unit, &UnitSize::name);
 
     if (it == units.end()) {
         const std::string all = "B, KiB, MiB or GiB";
@@ -72,7 +87,7 @@ std::uint64_t parse_size(const std::string& text, const std::string& full_key) {
         throw ConfigError("'" + full_key + "' has unknown unit '" + text_unit + "' " + tip);
     }
 
-    const auto multiplier = it->second;
+    const auto multiplier = it->bytes;
     const auto value = parse_unsigned(text.substr(0,pos), full_key);
     const auto max_in_unit = std::numeric_limits<std::uint64_t>::max() / multiplier;
 
@@ -86,4 +101,25 @@ std::uint64_t parse_size(const std::string& text, const std::string& full_key) {
     }
 
     return value * multiplier;
+}
+
+std::string format_size(const std::uint64_t bytes) {
+
+    if(bytes == 0) return "0 B";
+
+    std::ostringstream ss;
+    for (const auto& unit : units | std::views::reverse) {
+        if (bytes < unit.bytes) continue;
+        if (bytes % unit.bytes == 0) {
+            const auto value = bytes / unit.bytes;
+            ss << value << ' ' << unit.name;
+            return ss.str();
+        }
+
+        const auto value = static_cast<double>(bytes) / unit.bytes;
+        ss << std::fixed << std::setprecision(1) << value << ' ' << unit.name;
+        return ss.str();
+    }
+
+    return std::to_string(bytes) + " B"; //Should not reach if unit array is formated correctly
 }
