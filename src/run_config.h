@@ -8,6 +8,12 @@
 #include "cli.h"
 #include "test_config.h"
 
+struct RunPath {
+    std::filesystem::path plugin_root;
+    std::filesystem::path staging;
+    std::filesystem::path fs_out;
+};
+
 struct RunConfig {
     std::string node;
     std::string other_node;
@@ -22,8 +28,14 @@ struct RunConfig {
     std::vector<TestCase> tests;
 
     MessageHeader message_header;
+
+    RunPath paths;
 };
 
 RunConfig resolve(const NodeConfig& file, const Options& cli, const TestConfig& test_file);
+
+RunPath build_file_path(const std::filesystem::path& data_root);
+
+void check_avalible_storage(const std::filesystem::path plugin_root, const std::vector<TestCase>& tests);
 
 #endif

@@ -76,7 +76,7 @@ void write_metadata(const fs::path& dir, const MessageHeader& header, std::strin
     const std::string metadata = build_metadata_xml(header, from, to);
 
     const fs::path metadata_file = dir / "metadata.xml";
-    std::ofstream out(metadata_file, std::ios::out);
+    std::ofstream out(metadata_file);
 
 
     if (!out) {

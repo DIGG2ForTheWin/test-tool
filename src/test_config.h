@@ -9,7 +9,11 @@
 #include <map>
 
 struct GeneratedFile { std::uint64_t size_bytes; };
-struct ExistingFile { std::filesystem::path path; };
+struct ExistingFile { 
+    // After parsing: relative to <data_root>/testfiles.
+    // After resolve(): absolute path to the file.
+    std::filesystem::path path; 
+};
 
 struct TestCase {
     std::string name;

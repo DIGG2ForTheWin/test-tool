@@ -11,7 +11,7 @@ NodeConfig parse_node_config(const fs::path& file) {
     NodeConfig config;
 
     try {
-        const YAML::Node root = read_file(file, "(use example.node.yaml to create node.yaml)");
+        const YAML::Node root = read_file(file, "(use node.example.yaml to create node.yaml)");
 
         config.source = file;
 

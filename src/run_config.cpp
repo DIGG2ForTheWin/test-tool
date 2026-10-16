@@ -1,11 +1,16 @@
 #include "run_config.h"
 #include "errors.h"
+#include "test_config.h"
+#include "size.h"
 #include <filesystem>
 #include <set>
+#include <string_view>
 #include <variant>
 
 namespace {
     namespace fs = std::filesystem;
+    constexpr std::string_view testfile_dir = "testfiles";
+    constexpr std::string_view fs_plugin_dir = "fs_plugin_data";
 
     void check_url (const NodeEndpoint& endpoint, const std::string& which_node) {
         if (endpoint.url.ends_with("/")) {
@@ -32,6 +37,16 @@ namespace {
         }
 
         return alt;
+    }
+
+    void check_directory(const fs::path& dir) {
+        if (!fs::exists(dir)) {
+            throw ConfigError("'" + fs::absolute(dir).string() + "'  dosen't exist");
+        }
+
+        if (!fs::is_directory(dir)) {
+            throw ConfigError("'" + fs::absolute(dir).string() + "' is not a directory");
+        }
     }
 }
 
@@ -153,14 +168,13 @@ RunConfig resolve(const NodeConfig& node_file, const Options& cli, const TestCon
         }
     }
 
-    for (const auto& test_case: run_config.tests) {
-        const auto* existing = std::get_if<ExistingFile>(&test_case.payload);
+    for (auto& test_case: run_config.tests) {
+        auto* existing = std::get_if<ExistingFile>(&test_case.payload);
         if (!existing) continue;
 
-        const fs::path full_path = run_config.data_root / "testfiles" / existing->path;
+        const fs::path full_path = run_config.data_root / testfile_dir / existing->path;
 
         if (!fs::exists(full_path)) {
-            //tests.yaml: 'tester.tests[dicom_sample].file' not found: '/data/...'
             throw ConfigError(test_file.source.filename().string() + ": 'tester.tests[" 
                 + test_case.name + "].file' not found: '" + full_path.string() + "'");
         }
@@ -169,9 +183,50 @@ RunConfig resolve(const NodeConfig& node_file, const Options& cli, const TestCon
             throw ConfigError(test_file.source.filename().string() + ": 'tester.tests[" 
                 + test_case.name + "].file' isn't a file: '" + full_path.string() + "'");
         }
+
+        existing->path = full_path;
     }
 
     run_config.message_header = test_file.message_header;
 
     return run_config;
+}
+
+RunPath build_file_path(const fs::path& data_root) {
+    RunPath paths;
+
+    paths.plugin_root = data_root / fs_plugin_dir;
+    check_directory(paths.plugin_root);
+    
+    paths.fs_out = paths.plugin_root / "OUT";
+    check_directory(paths.fs_out);
+
+    paths.staging = paths.plugin_root / ".staging";
+    std::error_code ec;
+
+    fs::create_directory(paths.staging, ec);
+
+    if (ec) {
+        throw RunError("Could not create directory '" + fs::absolute(paths.staging).string() + "': " + ec.message());
+    }
+
+    return paths;
+}
+
+void check_avalible_storage(const std::filesystem::path plugin_root, const std::vector<TestCase>& tests) {
+    std::uint64_t size_needed = 0;
+
+    for (const auto& test : tests) {
+        if (auto* payload = std::get_if<GeneratedFile>(&test.payload)) {
+            size_needed += (payload->size_bytes * test.count);
+        }
+    }
+
+    size_needed += size_needed / 10; //adds ~10%
+    const auto available = fs::space(plugin_root).available;
+
+    if (available < size_needed) {
+        throw ConfigError("need " + format_size(size_needed) + ", only " + format_size(available) + " avalable on '" + fs::absolute(plugin_root).string() + "'");
+    }
+
 }
