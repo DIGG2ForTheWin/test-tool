@@ -32,7 +32,9 @@ add_library(tester_core STATIC
     src/generate.cpp
     src/metadata.cpp
     src/io_util.cpp
+    src/run.cpp
 )
+
 target_include_directories(tester_core PUBLIC src)
 target_link_libraries(tester_core PRIVATE yaml-cpp::yaml-cpp)
 

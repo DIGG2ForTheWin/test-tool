@@ -49,7 +49,7 @@ WriteStats generate_file(const std::filesystem::path& out_path, const std::uint6
 
         if (!out) {
             const int err = errno;
-            fail_and_remove(out, out_path, "write failed for '" + fs::absolute(out_path).string() + "' after " + format_size(remaining) + 
+            fail_and_remove(out, out_path, "write failed for '" + fs::absolute(out_path).string() + "' after " + format_size(written_bytes) + 
             " of " + format_size(size_bytes) + ": " + std::strerror(err));
         }
 

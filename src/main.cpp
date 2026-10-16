@@ -8,6 +8,7 @@
 #include "errors.h"
 #include "test_config.h"
 #include "metadata.h"
+#include "run.h"
 
 namespace {
     namespace fs = std::filesystem;
@@ -73,8 +74,6 @@ int main(int argc, char* argv[]) {
         NodeConfig node_file = parse_node_config(cli.node_config.value_or(default_node_config));
         TestConfig test_file = parse_test_config(cli.test_config.value_or(default_test_config));
         RunConfig run_config = resolve(node_file, cli, test_file);
-
-        write_metadata("/finns/inte", run_config.message_header, run_config.node, run_config.other_node);
 
         print_run_config(run_config);
     }
