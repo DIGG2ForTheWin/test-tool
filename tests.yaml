@@ -1,0 +1,21 @@
+# --------------------- tester (test program) ---------------------
+# Node names (red/blue) are used as AS4 party ids and must match the PMode.
+tester:
+  message:                          # header values for metadata.xml – must match the PMode
+    party_id_type: urn:oasis:names:tc:ebcore:partyid-type:unregistered
+    sender_role: http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/sender
+    receiver_role: http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/receiver
+    service: bdx:noprocess
+    service_type: tc1
+    action: TC1Leg1
+
+  tests:
+    - name: small_files
+      from: blue
+      to: red
+      size: 10 KiB   #Use KiB/MiB/GiB 
+      count: 2
+    - name: dicom_sample
+      from: blue
+      to: red
+      file: dicom/0002.dcm    # relative to <data_root>/testfiles
