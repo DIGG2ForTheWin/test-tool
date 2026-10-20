@@ -46,3 +46,7 @@ target_link_libraries(tester PRIVATE tester_core)
 # Small tool for testing file generation on its own
 add_executable(gen_bench tools/gen_bench.cpp)
 target_link_libraries(gen_bench PRIVATE tester_core)
+
+# Install rule: 'cmake --install <build-dir>' copies tester to <prefix>/bin
+include(GNUInstallDirs)
+install(TARGETS tester RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
