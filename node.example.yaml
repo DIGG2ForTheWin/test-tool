@@ -1,0 +1,6 @@
+# node.yaml – one per machine, not committed. Copy this file to node.yaml and edit.
+node: blue                          # which node this machine is (must be one of 'nodes')
+data_root: /opt/lab/blue/domibus    # Domibus folder on this machine (contains fs_plugin_data/ and testfiles/)
+nodes:                              # exactly two node names, used as AS4 party ids (must match the PMode)
+  - blue
+  - red

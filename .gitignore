@@ -1,0 +1,21 @@
+# Build output
+/build*/
+.cache/
+compile_commands.json
+
+# Per-machine config (copy from node.example.yaml)
+node.yaml
+
+# PMode files live in their own repo
+/pmode
+
+# Secrets – never commit
+*.pem
+token.txt
+domibus_pass.txt
+.env
+
+# Editor / OS
+.vscode/
+.DS_Store
+._*
